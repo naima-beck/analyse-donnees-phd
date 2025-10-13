@@ -1,0 +1,107 @@
+---
+title: "Détection d’outliers"
+output: html_notebook
+---
+
+```{r}
+# Chargement des librairies nécessaires
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(tidyr)
+library(stringr)
+```
+
+
+```{r}
+phd=read.csv("../data/PhD.dataset.csv")
+phd <- phd[,-1] #on supprime X qui ne sert à rien
+```
+
+ 
+```{r}
+#remplacer les valeurs parasites par du NA
+phd[phd == "" | phd == " " | #vide ou espace
+       phd=="na" | #pas detecté par R en tant que NA (Langue.de.la.these,Identifiant.directeur...)
+       phd=="#NAME?" | # (Auteur,Titre)
+       phd=="unknown" | phd == "andy" | # (Genre) par contre si unknown c'est pas une erreur (non binaire, genderfluid ect) on laisse
+       phd=="Directeur de these inconnu" #  (Directeur.de.these)
+     ] <- NA #remplacer l'absence de valeur ou les erreurs par NA
+```
+
+
+```{r}
+colnames(phd)
+
+```
+
+
+# Filtrage des dates 
+
+Conversion du format des dates
+```{r}
+# les dates sont dans le format jour-mois-année avec une année à 2 chiffres
+phd$Date.de.premiere.inscription.en.doctorat <- as.Date(phd$Date.de.premiere.inscription.en.doctorat, format = "%d-%m-%y")  # Utilisation de l'année à 2 chiffres
+head(phd$Date.de.premiere.inscription.en.doctorat)
+```
+
+
+```{r}
+# Filtrer les thèses dans la période 1984-2018
+phd_filtree <- subset(phd, format(Date.de.premiere.inscription.en.doctorat, "%Y") >= 1984 & format(Date.de.premiere.inscription.en.doctorat, "%Y") <= 2018)
+head(phd_filtree)
+```
+
+
+# Outliers : Bely Lucien
+
+```{r}
+# Agréger le nombre de thèses encadrées par chaque directeur
+phd_directeurs <- phd_filtree %>%
+  group_by(Identifiant.directeur, Directeur.de.these..nom.prenom.) %>% 
+  
+  summarise(nombre_theses = n(), .groups = 'drop')
+
+# Afficher les résultats
+head(phd_directeurs)
+```
+
+```{r}
+# Renommer la colonne pour un nom plus compréhensible
+colnames(phd_directeurs)[colnames(phd_directeurs) == "Directeur.de.these..nom.prenom."] <- "Nom.Prenom.Directeur"
+head(phd_directeurs)
+```
+
+
+```{r}
+# Traitement des noms des directeurs pour séparer ceux qui sont composés
+phd_directeurs_sep <- phd_directeurs %>%
+  separate_rows(Nom.Prenom.Directeur, sep = ",") %>%  # Séparer les noms par virgule
+  select(Nom.Prenom.Directeur, nombre_theses) %>% # Conserver uniquement les colonnes nécessaires
+  filter(trimws(Nom.Prenom.Directeur) != "") %>% #erreur qui gardait les espaces
+  arrange(Nom.Prenom.Directeur) %>% #par ordre alphabétique
+  slice(-(1:11)) #erreur de séparation à traiter ultérieurement
+
+# Vérifier le résultat sans la colonne Identifiant.directeur
+print(phd_directeurs_sep)
+```
+```{r}
+# Additionner le nombre de thèses pour chaque directeur
+phd_directeurs_count <- phd_directeurs_sep %>%
+  group_by(Nom.Prenom.Directeur) %>%  # Grouper par directeur
+  summarise(nombre_theses = sum(nombre_theses))  # Additionner le nombre de thèses
+
+# Afficher le résultat
+print(phd_directeurs_count)
+```
+J'ai comparé les dataframes et j'ai constaté que, par exemple, pour "Bely Lucien", le traitement fonctionne correctement.
+
+
+```{r}
+# Trier les directeurs par nombre de thèses (ordre décroissant)
+phd_directeurs_count <- phd_directeurs_count %>%
+  arrange(desc(nombre_theses))
+
+head(phd_directeurs_count)
+```
+

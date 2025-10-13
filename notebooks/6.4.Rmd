@@ -1,0 +1,91 @@
+---
+title: "Obtention de résultats préliminaires"
+output: html_notebook
+---
+
+# Données 
+```{r}
+# Chargement des librairies nécessaires
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+```
+
+
+```{r}
+phd=read.csv("../data/PhD.dataset.csv")
+phd <- phd[,-1] #on supprime X qui ne sert à rien
+```
+
+ 
+```{r}
+#remplacer les valeurs parasites par du NA
+phd[phd == "" | phd == " " | #vide ou espace
+       phd=="na" | #pas detecté par R en tant que NA (Langue.de.la.these,Identifiant.directeur...)
+       phd=="#NAME?" | # (Auteur,Titre)
+       phd=="unknown" | phd == "andy" | # (Genre) par contre si unknown c'est pas une erreur (non binaire, genderfluid ect) on laisse
+       phd=="Directeur de these inconnu" #  (Directeur.de.these)
+     ] <- NA #remplacer l'absence de valeur ou les erreurs par NA
+```
+
+```{r}
+# Obtenir les valeurs uniques de la colonne Langue.de.la.these
+unique(phd$Langue.de.la.these)
+```
+
+# Traitement des dates
+
+Création d'une colonne language.rec
+```{r}
+phd$language.rec <- ifelse(grepl("fr", phd$Langue.de.la.these, ignore.case = TRUE) & 
+                                           grepl("en", phd$Langue.de.la.these, ignore.case = TRUE), 
+                                           "Bilingue",
+                                          ifelse(grepl("fr", phd$Langue.de.la.these, ignore.case = TRUE), 
+                                                 "Français",
+                                                 ifelse(grepl("en", phd$Langue.de.la.these, ignore.case = TRUE), 
+                                                        "Anglais", 
+                                                        "Autre")))
+```
+
+
+Format des dates
+```{r}
+# les dates sont dans le format jour-mois-année avec une année à 2 chiffres
+phd$Date.de.soutenance <- as.Date(phd$Date.de.soutenance, format = "%d-%m-%y")  # Utilisation de l'année à 2 chiffres
+head(phd$Date.de.soutenance)
+```
+
+Langue rec que j'ai créé
+```{r}
+phd_filtered <- phd %>%
+  filter(Year >= 1985) %>% #on commence à 1985 car avant pas bcp de donnée
+  group_by(Year,  language.rec) %>%
+  summarise(Nombre = n()) %>%
+  ungroup()
+
+ggplot(phd_filtered, aes(x = Year, y = Nombre, fill =  language.rec)) +
+  geom_area(position = "stack") +  # Position empilée
+  labs(title = "Évolution du choix de langue au fil du temps",
+       x = "Année",
+       y = "Nombre de thèses",
+       fill = "Langue") +
+  scale_fill_manual(values = c("#A9CEF4", "#000000","#36494E", "#7EA0B7", "#597081"))
+
+```
+Lang rec du prof
+```{r}
+phd_filtered2 <- phd %>%
+  filter(Year >= 1985) %>% #on commence à 1985 car avant pas bcp de donnée
+  group_by(Year, Langue_rec) %>%
+  summarise(Nombre = n()) %>%
+  ungroup()
+
+ggplot(phd_filtered2, aes(x = Year, y = Nombre, fill = Langue_rec)) +
+  geom_area(position = "stack") +  # Position empilée
+  labs(title = "Évolution du choix de langue au fil du temps",
+       x = "Année",
+       y = "Nombre de thèses",
+       fill = "Langue") +
+  scale_fill_manual(values = c("#A9CEF4", "#000000","#36494E", "#7EA0B7", "#597081"))
+```
+

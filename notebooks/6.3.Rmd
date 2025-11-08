@@ -1,0 +1,95 @@
+---
+title: "Détection d’outliers"
+author: "Naïma Beck"
+output: html_notebook
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(tidyr)
+library(stringr)
+```
+
+```{r}
+phd=read.csv("../data/processed/PhD.dataset.clean.csv")
+```
+
+Colonne **`Date.de.soutenance`**  au format date
+
+les dates sont dans le format jour-mois-année avec une année à 2 chiffres
+
+```{r}
+phd$Date.de.soutenance <- as.Date(phd$Date.de.soutenance, format = "%d-%m-%y") 
+
+head(phd$Date.de.soutenance)
+```
+
+```{r}
+phd$Date.de.premiere.inscription.en.doctorat <- as.Date(phd$Date.de.premiere.inscription.en.doctorat, format = "%d-%m-%y")  
+head(phd$Date.de.premiere.inscription.en.doctorat)
+```
+
+```{r}
+head(phd)
+```
+
+
+# Filtrage des dates: période 1984-2018
+```{r}
+phd_filtree <- subset(
+  phd,
+  !is.na(Date.de.premiere.inscription.en.doctorat) &
+  as.numeric(format(Date.de.premiere.inscription.en.doctorat, "%Y")) >= 1984 &
+  as.numeric(format(Date.de.premiere.inscription.en.doctorat, "%Y")) <= 2018
+)
+```
+
+# Outliers : Bely Lucien
+
+## nombre de thèses encadrées par chaque directeur
+```{r}
+phd_directeurs <- phd_filtree %>%
+  group_by(Identifiant.directeur, Directeur.de.these..nom.prenom.) %>% 
+  
+  summarise(nombre_theses = n(), .groups = 'drop')
+
+head(phd_directeurs)
+```
+
+## nom plus compréhensible
+```{r}
+colnames(phd_directeurs)[colnames(phd_directeurs) == "Directeur.de.these..nom.prenom."] <- "Nom.Prenom.Directeur"
+head(phd_directeurs)
+```
+
+## traitement des noms des directeurs pour séparer ceux qui sont composés
+```{r}
+phd_directeurs_sep <- phd_directeurs %>%
+  separate_rows(Nom.Prenom.Directeur, sep = ",") %>%  # virgule
+  select(Nom.Prenom.Directeur, nombre_theses) %>% 
+  filter(trimws(Nom.Prenom.Directeur) != "") %>% #erreur qui gardait les espaces
+  arrange(Nom.Prenom.Directeur) %>% 
+  slice(-(1:11)) 
+
+print(phd_directeurs_sep)
+```
+
+## nombre de thèses pour chaque directeur
+```{r}
+phd_directeurs_count <- phd_directeurs_sep %>%
+  group_by(Nom.Prenom.Directeur) %>%  
+  summarise(nombre_theses = sum(nombre_theses))  
+
+print(phd_directeurs_count)
+```
+J'ai comparé les dataframes et j'ai constaté que, par exemple, pour "Bely Lucien", le traitement fonctionne correctement.
+
+# Classement des directeurs par nombre de thèses (ordre décroissant)
+```{r}
+phd_directeurs_count <- phd_directeurs_count %>%
+  arrange(desc(nombre_theses))
+
+head(phd_directeurs_count)
+```

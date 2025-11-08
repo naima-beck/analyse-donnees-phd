@@ -1,0 +1,71 @@
+---
+title: "Obtention de résultats préliminaires"
+author: "Naïma Beck"
+output: html_notebook
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+```
+
+```{r}
+phd=read.csv("../data/processed/PhD.dataset.clean.csv")
+```
+
+### valeurs uniques de la colonne Langue.de.la.these
+```{r}
+unique(phd$Langue.de.la.these)
+```
+
+# Langue 
+
+Création d'une colonne language.rec
+```{r}
+phd$language.rec <- ifelse(grepl("fr", phd$Langue.de.la.these, ignore.case = TRUE) & 
+                                           grepl("en", phd$Langue.de.la.these, ignore.case = TRUE), 
+                                           "Bilingue",
+                                          ifelse(grepl("fr", phd$Langue.de.la.these, ignore.case = TRUE), 
+                                                 "Français",
+                                                 ifelse(grepl("en", phd$Langue.de.la.these, ignore.case = TRUE), 
+                                                        "Anglais", 
+                                                        "Autre")))
+```
+
+# Visualisation 
+
+## Visualisation avec la colonne que j'ai créé
+```{r}
+phd_filtree <- phd %>%
+  filter(Year >= 1985) %>% #on commence à 1985 car avant pas bcp de donnée
+  group_by(Year,  language.rec) %>%
+  summarise(Nombre = n()) %>%
+  ungroup()
+
+ggplot(phd_filtree, aes(x = Year, y = Nombre, fill =  language.rec)) +
+  geom_area(position = "stack") +  # Position empilée
+  labs(title = "Évolution du choix de langue au fil du temps",
+       x = "Année",
+       y = "Nombre de thèses",
+       fill = "Langue") +
+  scale_fill_manual(values = c("#A9CEF4", "#000000","#36494E", "#7EA0B7", "#597081"))
+
+```
+
+## Visualisation avec la colonne du prof
+```{r}
+phd_filtree2 <- phd %>%
+  filter(Year >= 1985) %>% #on commence à 1985 car avant pas bcp de donnée
+  group_by(Year, Langue_rec) %>%
+  summarise(Nombre = n()) %>%
+  ungroup()
+
+ggplot(phd_filtree2, aes(x = Year, y = Nombre, fill = Langue_rec)) +
+  geom_area(position = "stack") +  # Position empilée
+  labs(title = "Évolution du choix de langue au fil du temps",
+       x = "Année",
+       y = "Nombre de thèses",
+       fill = "Langue") +
+  scale_fill_manual(values = c("#A9CEF4", "#000000","#36494E", "#7EA0B7", "#597081"))
+```

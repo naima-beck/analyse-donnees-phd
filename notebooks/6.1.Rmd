@@ -1,0 +1,229 @@
+---
+title: "Identifier des données manquantes"
+author: "Naïma Beck"
+output: html_notebook
+---
+
+```{r}
+library(VIM)
+library(dplyr)
+library(naniar)
+library(ggplot2)
+library(tidyr)
+library(reshape2)
+library(visdat)
+library(ggcorrplot)
+library(corrplot)
+library(corrplot)
+library(dplyr)
+```
+
+## Importation du data set phd 
+```{r}
+phd=read.csv("../data/raw/PhD.dataset.csv")
+head(phd)
+summary(phd)
+```
+
+### Nom des colonnes du data set **'phd'** 
+```{r}
+names(phd)
+```
+
+### on supprime X qui ne sert à rien
+```{r}
+phd <- phd[,-1] 
+```
+
+
+
+```{r}
+valeurs_uniques <- unique(phd$Langue.de.la.these[!is.na(phd$Langue.de.la.these)]) 
+head(valeurs_uniques)
+```
+
+### Nettoyage des données avec NA
+```{r}
+#remplacer les valeurs parasites par du NA
+phd[phd == "" | phd == " " | #vide ou espace
+       phd=="na" | #pas detecté par R en tant que NA (Langue.de.la.these,Identifiant.directeur...)
+       phd=="#NAME?" | # (Auteur,Titre)
+       phd=="unknown" | phd == "andy" | # (Genre) par contre si unknown c'est pas une erreur (non binaire, genderfluid ect) on laisse
+       phd=="Directeur de these inconnu" #  (Directeur.de.these)
+     ] <- NA 
+
+head(phd)
+```
+
+
+# exportation 
+```{r}
+write.csv(phd, "../data/processed/PhD.dataset.clean.csv", row.names = FALSE)
+```
+
+
+# Evaluation de la qualité des données 
+
+### Nombre total de valeurs manquantes
+```{r}
+total_na <- sum(is.na(phd))
+total_na
+```
+
+### Nombre total de données 
+```{r}
+total_data <- count(phd) * ncol(phd)
+total_data
+```
+
+### Pourcentage de donnée manquante
+```{r}
+pourcentage_na <- total_na / total_data
+pourcentage_na
+```
+
+
+### Valeurs manquantes par colonne
+```{r}
+na_par_colonne <- colSums(is.na(phd))
+
+na_phd <- data.frame(variable = names(na_par_colonne), 
+                    na_par_colonne = na_par_colonne,row.names = NULL)
+head(na_phd)
+```
+
+### pourcentage données manquantes
+```{r}
+na_phd$pourcentage_donnee_manquante = round((na_phd$na_par_colonne/nrow(phd))*100)
+
+head(na_phd)
+
+#colnames(na_phd)
+```
+
+
+### correlation 
+```{r}
+#ggcor(phd)
+```
+
+
+
+### Sélection des colonnes spécifiques pour la corrélation comme dans le pdf 
+```{r}
+phd_cor <- phd %>%
+  select(Identifiant.auteur, Titre, Directeur.de.these..nom.prenom., Directeur.de.these,
+         Etablissement.de.soutenance, Identifiant.etablissement, Date.de.premiere.inscription.en.doctorat,
+         Date.de.soutenance, Mise.a.jour.dans.theses.fr, Year, etablissement_rec, Langue_rec)
+```
+
+### Modification des noms des colonnes pour qu'ils soient plus lisibles
+```{r}
+names(phd_cor) <- gsub("Directeur.de.these", "Directeur de thèse", names(phd_cor))
+names(phd_cor) <- gsub("Identifiant.auteur", "Identifiant de l'auteur", names(phd_cor))
+names(phd_cor) <- gsub("Titre", "Titre de la thèse", names(phd_cor))
+names(phd_cor) <- gsub("Directeur.de.these..nom.prenom.", "Directeur de thèse (Nom, Prénom)", names(phd_cor))
+names(phd_cor) <- gsub("Etablissement.de.soutenance", "Établissement de soutenance", names(phd_cor))
+names(phd_cor) <- gsub("Identifiant.etablissement", "Identifiant de l'établissement", names(phd_cor))
+names(phd_cor) <- gsub("Date.de.premiere.inscription.en.doctorat", "Date de première inscription en doctorat", names(phd_cor))
+names(phd_cor) <- gsub("Date.de.soutenance", "Date de soutenance", names(phd_cor))
+names(phd_cor) <- gsub("Mise.a.jour.dans.theses.fr", "Mise à jour dans theses.fr", names(phd_cor))
+names(phd_cor) <- gsub("Year", "Année", names(phd_cor))
+names(phd_cor) <- gsub("etablissement_rec", "Établissement ", names(phd_cor))
+names(phd_cor) <- gsub("Langue_rec", "Langue", names(phd_cor))
+```
+
+## Matrice de corrélation des valeurs manquantes (1 pour manquant, 0 pour non manquant)
+
+### version 1
+```{r}
+missing_matrix <- is.na(phd_cor)
+cor_matrix <- cor(missing_matrix, use = "pairwise.complete.obs")
+
+#masquer la diagonale et les éléments du triangle supérieur
+cor_matrix[upper.tri(cor_matrix, diag = TRUE)] <- NA
+
+cor_melt <- melt(cor_matrix, na.rm = TRUE)
+```
+
+```{r}
+ggplot(cor_melt, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = ifelse(!is.na(value) & abs(value) > 0.01, round(value, 1), "")), color = "black", size = 3) +
+  scale_fill_gradient2(low = "#8A0D1E", high = "#003C57", mid = "#F0F0F0", 
+                       midpoint = 0, limit = c(-1, 1), space = "Lab", name="Corrélation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        axis.text.y = element_text(hjust = 1)) +
+  labs(title = "Corrélation entre les différentes variables concernant l'absence de données",
+       x = "", y = "") +
+  coord_fixed(ratio = 1, clip = "off")
+```
+
+
+### version 2
+
+```{r}
+#matrice de corrélation des données manquantes
+missing_matrix <- is.na(phd) %>% as.matrix() %>% as.data.frame()
+cor_matrix <- cor(missing_matrix, use = "pairwise.complete.obs")
+```
+
+```{r}
+corrplot(
+  cor_matrix,
+  method = "color",
+  type = "lower",        # triangle inférieur
+  tl.col = "black",
+  tl.cex = 0.6,          
+  #tl.srt = 0,           
+  addCoef.col = "black", 
+  number.cex = 0.2,      
+  na.label = " ",        
+  cl.pos = "r",          
+  cl.ratio = 0.2,        
+  mar = c(2, 2, 1, 1),   
+  diag = FALSE,          
+  title = "Corrélation des données manquantes"
+)
+```
+
+## Headmap donnée manquante
+```{r}
+missing_data <- phd %>%
+  select(Statut, Identifiant.auteur, Date.de.premiere.inscription.en.doctorat, Date.de.soutenance) %>%
+  mutate(across(everything(), as.character)) %>%   
+  pivot_longer(cols = -Statut, names_to = "Variable", values_to = "Valeur") %>%
+  group_by(Statut, Variable) %>%
+  summarize(pct_missing = mean(is.na(Valeur)) * 100) %>%
+  ungroup()
+```
+
+```{r}
+ggplot(missing_data, aes(x = Statut, y = Variable, fill = pct_missing)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "#FFEB69", high = "#A7001E", na.value = "white") +
+  geom_text(aes(label = round(pct_missing, 1)), color = "black", size = 4) +
+  labs(title = "Visualisation de patterns dans les données manquantes",
+       x = "Statut", 
+       y = "Variables", 
+       fill = "Pourcentage") +
+  theme_minimal()
+```
+
+
+## Nom du graphe 
+
+### occurrences de données manquantes
+```{r}
+gg_miss_upset(phd) 
+```
+
+
+```{r}
+gg_miss_var(phd) +
+  labs(title = "Quantité de valeurs manquantes par variable",
+       x = "Variables",
+       y = "Nombre de valeurs manquantes")
+```
+

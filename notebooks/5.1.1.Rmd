@@ -1,0 +1,105 @@
+---
+title: "Opérations les plus simples"
+author: "Naïma Beck"
+output: html_notebook
+---
+
+```{r}
+#pour exportation 
+library(here)
+
+#pour pivot_longer
+library(tidyr)
+library(dplyr)
+
+#pour melt
+library(reshape2)
+```
+
+## Création de jeux de données 
+```{r}
+df1 <- data.frame(
+  a = rnorm(5, mean = 50, sd = 10), #loi normal de distribution, mean: moyenne, sd:ecart type
+  b = rnorm(5, mean = 50, sd = 10),
+  c = rnorm(5, mean = 50, sd = 10),
+  d = rnorm(5, mean = 50, sd = 10)
+)
+```
+
+```{r}
+df2 <- data.frame(
+  a = rnorm(5, mean = 50, sd = 10),
+  b = rnorm(5, mean = 50, sd = 10),
+  c = rnorm(5, mean = 50, sd = 10),
+  d = rnorm(5, mean = 50, sd = 10)
+)
+```
+
+
+## Manipulation et transformation du jeu de donnée
+
+### Changement d'une valeur en NaN
+```{r}
+df1[1,1]=NaN
+head(df1)
+```
+
+
+### Changement de la valeur Nan en 0
+```{r}
+#fillna pour python
+df1[is.na(df1)] <- 0
+head(df1)
+```
+
+### Exporter le jeu de données df1 en base de données CSV
+```{r}
+write.csv2(df1, "../data/raw/nom.csv", row.names = FALSE)
+```
+
+### Fusionner verticalement les jeux de données
+```{r}
+df_fusion_vert <- rbind(df1,df2)
+#head(df_fusion_vert)
+df_fusion_vert #petit jeu de donnée donc pas de head() on veut tout voir
+```
+
+### Fusionner horizontalement les jeux de données
+```{r}
+df_fusion_hor <- cbind(df1,df2)
+df_fusion_vert
+```
+
+### Fusionner toutes les colonnes en une colonne
+
+```{r}
+#technique obsolète
+melt(df1)
+```
+
+```{r}
+#Mieux
+df_melt <- df1 %>% 
+  pivot_longer(
+    cols = everything(),   
+    names_to = "categorie",
+    values_to = "nombre"    
+  ) %>%
+  select(nombre)
+
+head(df_melt)
+```
+
+### Décaler les valeurs d’une colonne d’une ligne vers le bas
+```{r}
+df3 <- df1 
+df3$d <- c(NA, df3$d[-nrow(df1)]) 
+```
+Nous avons modifié pour la colonne d, mais il y a un problème : 1 valeur qui saute
+
+```{r}
+#Mm projet mais pour la ieme colonne : généralisation
+i=2 #choix de la colonne
+df3[,i] <- c(NA, df3[-nrow(df1),i])
+```
+

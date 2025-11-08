@@ -1,0 +1,168 @@
+---
+title: "Premières manipulations d’un jeu de données"
+author: "Naïma Beck"
+output: html_notebook
+---
+ 
+```{r}
+library(ggplot2)
+library(gridExtra)
+library(grid)
+library(dplyr)
+```
+
+
+## Importation du dataset
+
+Chargement du dataset **`age_gender`**
+```{r}
+age_gender <- read.csv("../data/raw/age_gender.csv", sep=";")
+```
+
+
+```{r}
+head(age_gender)
+```
+
+
+```{r}
+summary(age_gender)
+```
+
+## Découpage en catégorie d'age
+```{r}
+age_gender$age_cat <- cut(age_gender$age,seq(0,116,5))
+head(age_gender)
+```
+
+
+## Distribution de l'âge par tranches de 5 ans
+```{r}
+plot_age <- ggplot(age_gender, aes(x=age_cat)) + 
+  geom_bar(fill="#A7001E", width=0.8) +  # Réduire la largeur des barres
+  labs(x="Tranche d'âge", y="Nombre d'individus", title="Distribution de l'âge par tranches de 5 ans") + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=9),
+        plot.title = element_text(hjust=0.5))
+plot_age
+```
+
+## Nombre d'observations par Genre
+```{r}
+plot_gender <- ggplot(age_gender, aes(x = factor(genre, 
+                                                 levels = c(0, 1), 
+                                                 labels = c("Homme", "Femme")), 
+                                                 fill = factor(genre, levels = c(0, 1), labels = c("Homme", "Femme")))) +
+  geom_bar(color = "black") +
+  scale_fill_manual(values = c("Homme" = "#18534F", "Femme" = "#ECF8F6")) +
+  labs(title = "Nombre d'observations par Genre", 
+       x = "Genre", 
+       y = "Nombre d'individus") +
+  theme_minimal() +
+  theme(legend.position = "none") #masquer la légende
+
+plot_gender
+```
+
+
+
+## Les deux graphiques côte à côte
+
+```{r}
+grid.arrange(plot_age, plot_gender, ncol=1)
+```
+
+## Distribution de l'âge et du genre
+```{r}
+plot_age_gender <- ggplot(age_gender, aes(x=age_cat, fill=as.factor(genre))) + 
+  geom_bar(position="stack", width=0.8) +  # Réduire la largeur des barres
+  labs(x="Tranche d'âge", y="Nombre d'individus", title="Distribution de l'âge et du genre des individus") + 
+  scale_fill_manual(values = c("0" = "black", "1" = scales::alpha("#532B2B", 0.5)), # pas de rose et bleue car cliché
+                    name = "Genre", 
+                    labels = c("0"="Homme", "1"="Femme")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size=9),  # Ajuster les étiquettes
+        plot.title = element_text(hjust=0.5))
+
+plot_age_gender
+```
+
+## Courbe de densité pour l'âge, séparée par genre
+```{r}
+ggplot(age_gender, aes(x = age, color = factor(genre), fill = factor(genre))) + 
+  geom_density(alpha = 0.3) +  # alpha pour la transparence des couleurs
+  labs(title = "Distribution de l'âge par genre", 
+       x = "Âge", 
+       y = "Densité", 
+       color = "Genre", 
+       fill = "Genre") +
+  scale_color_manual(values = c("blue", "pink"), labels = c("Homme", "Femme")) +
+  scale_fill_manual(values = c("blue", "pink"), labels = c("Homme", "Femme")) +
+  theme_minimal()
+```
+
+
+## L'âge moyen et l'écart-type par genre
+```{r}
+age_stats_by_gender <- age_gender %>%
+  group_by(genre) %>%
+  summarise(
+    mean_age = mean(age, na.rm = TRUE),
+    sd_age = sd(age, na.rm = TRUE)
+  )
+```
+
+
+## Visualisation de l'âge moyen et de l'écart-type
+```{r}
+ggplot(age_stats_by_gender, aes(x = factor(genre), y = mean_age, fill = factor(genre))) +
+  geom_bar(stat = "identity", width = 0.5, color = "black") +  # Barres représentant l'âge moyen
+  geom_errorbar(aes(ymin = mean_age - sd_age, ymax = mean_age + sd_age), width = 0.2) +  # Barre d'erreur pour l'écart-type
+  labs(title = "Âge moyen par genre", 
+       x = "Genre", 
+       y = "Âge moyen"
+       ) +
+  scale_fill_manual(values = c("blue", "pink"), labels = c("Homme", "Femme")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.position = "none") #masquer la légende
+```
+
+
+```{r}
+ggplot(age_gender, aes(x=age,fill=as.factor(genre))) + 
+  geom_histogram()+ 
+  labs(x="Age",y="Nombre",title="Distribution de l'âge et du genre des individus") + 
+  scale_fill_manual(values = c("0" = "blue", "1" = scales::alpha("pink", 0.5)), 
+                    name = "Genre",
+                    labels = c("Homme", "Femme"))  
+
+```
+
+
+```{r}
+ggplot(age_gender, aes(x=age_cat,fill=as.factor(genre))) + 
+  geom_bar() +
+  labs(x="Catégorie d'âge", y="Nombre", title="Distribution de l'âge et du genre en catégorie d'âge des individus") +
+  scale_fill_manual(values = c("0" = "blue", "1" = scales::alpha("pink", 0.5)), 
+                    name = "Genre",
+                    labels = c("Homme", "Femme")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)  # Incliner les étiquettes des abscisses
+  )
+
+```
+
+
+```{r}
+ggplot(age_gender, aes(x=age, fill=as.factor(genre))) + 
+  geom_density()+ 
+  labs(x="Age",
+       y="Nombre",
+       title="No Name") + 
+  scale_fill_manual(values = c("0" = "blue", "1" = "pink"), 
+                    name = "Genre",
+                    labels = c("Homme", "Femme"))
+
+```
+
+

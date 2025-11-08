@@ -1,13 +1,15 @@
 # Analyse de Données : thèse de doctorat en France
 
-Ce projet s'inscrit dans le cadre du cours d'Analyse de Données de Cy Tech et Sciences-Po Saint-Germain-En-Laye. Il comprend la manipulation, le nettoyage et l'analyse de plusieurs jeux de données. Ce vise à analyser l'évolution de l'usage de l'anglais dans les thèses de doctorat en France, mettant ainsi en lumière une tendance croissante liée aux injonctions institutionnelles et à l'internationalisation de la recherche. Parallèlement, nous relèverons une saisonnalité marquée des soutenances, concentrées début décembre en raison des échéances administratives. Enfin, l'exploitation statistique du jeu de données PHD via R permet de quantifier ces phénomènes et d'éclairer les tensions entre francophonie académique et mondialisation scientifique.
+Ce projet s’inscrit dans le cadre du cours d’Analyse de Données proposé conjointement par CY Tech et Sciences Po Saint-Germain-en-Laye. Il porte sur l’étude des thèses de doctorat soutenues en France, et plus particulièrement sur l’évolution de l’usage de l’anglais dans leur rédaction. L’objectif est de comprendre comment les dynamiques d’internationalisation et les injonctions institutionnelles influencent les pratiques d’écriture scientifique.
+
+L’analyse met également en évidence une forte saisonnalité des soutenances, concentrées en décembre, ce qui reflète les contraintes administratives et les échéances liées aux concours et commissions d’évaluation.
+Grâce à l’exploitation statistique du jeu de données PHD via R, le projet permet de quantifier ces phénomènes et de mettre en lumière les tensions entre francophonie académique et mondialisation scientifique.
 
 ## Objectifs
 
-- Maîtriser les techniques de prétraitement et manipulation de données
-- Identifier et traiter les données manquantes et outliers
-- Produire des visualisations pertinentes
-- Analyser un jeu de données complexe 
+Le projet vise à maîtriser les principales techniques de prétraitement, de nettoyage et de manipulation de données.
+Il comprend l’identification et le traitement des valeurs manquantes et des outliers, la production de visualisations pertinentes et l’analyse approfondie de jeux de données complexes.
+L’ensemble de ces étapes s’inscrit dans une démarche rigoureuse de compréhension des données relatives aux thèses de doctorat.
 
 ## Technologies utilisés
 - **Langage** : R
@@ -24,6 +26,7 @@ Ce projet s'inscrit dans le cadre du cours d'Analyse de Données de Cy Tech et S
 git clone https://github.com/naima-beck/analyse-donnees-phd.git
 cd analyse-donnees-phd
 ```
+
 ### Données
 Les données brutes sont disponibles sur [Caisses des Dépôts](https://opendata.caissedesdepots.fr/explore/dataset/moncompteformation_formations_engagees/information/?disjunctive.domaine_formation_nsf&disjunctive.region_lieu_formation&disjunctive.departement_lieu_formation&disjunctive.intitule_certification).
 le nommer : moncompteformation_formations_engagees.csv
@@ -31,69 +34,57 @@ le nommer : moncompteformation_formations_engagees.csv
 [Institut national d'etudes démographiques](https://www.ined.fr/fr/tout-savoir-population/chiffres/france/structure-population/regions/)
 le nommer : .csv 
 
-Placez les fichiers `moncompteformation_formations_engagees.csv`et `.csv`  dans le dossier `data/` avant d'exécuter les notebooks.
+Placez les fichiers `moncompteformation_formations_engagees.csv`et `.csv`  dans le dossier `data/raw/` avant d'exécuter les notebooks.
 
 ### Structure du projet
 
 ```bash
 analyse-donnees-phd/
 ├── data/ # Jeux de données
-│ ├── age_gender.csv
-│ ├── formations_engagees.csv
-│ └── theses_doctorat.csv
-├── notebooks/ # Notebooks Jupyter
-│ ├── .ipynb
-│ ├── .ipynb
-│ └── .ipynb
-├── Rapport
-│ 
+│ ├── raw
+│    ├── age_gender.csv
+│    ├── moncompteformation_formations_engagees.csv
+│    ├── nom.csv
+│    ├── PhD.dataset.csv 
+│ ├── processed
+│    ├── PhD.dataset.clean.csv 
+│ ├── external
+│    └── fr_population.region.departement.csv
+├── notebooks/ # Notebooks Jupyter séparés en fonction des exercices
+│ ├── 4.ipynb
+│ ├── 5.1.1.ipynb
+│ ├── 5.2.1.ipynb
+│ ├── 6.1.ipynb
+│ ├── 6.2.ipynb
+│ ├── 6.3.ipynb
+│ └── 6.4.ipynb
+├── Rapport_phd
 ├── references/ # énoncé
 └── README.md
 ```
+
 ## Jeux de Données analysés
 
-### 1. Données Âge-Genre
-- Distribution par tranches d'âge
-- Comparaison hommes/femmes
-- Visualisations avec matplotlib/ggplot2
+L’étude s’appuie sur trois ensembles de données principaux :
 
-### 2. Formations Engagées (CDC)
-- Taux de complétion par département
-- Analyse géographique des formations
-- Calcul des montants engagés
+Âge et genre : analyse de la distribution par tranches d’âge et par sexe, appuyée sur des visualisations statistiques.
 
-### 3. Thèses de Doctorat (1985-2020)
-- Données manquantes et patterns
-- Distribution temporelle des soutenances
-- Analyse des directeurs de thèse
-- Évolution des langues de rédaction
+Formations engagées (Caisse des Dépôts) : exploration géographique et financière des formations, incluant les taux de complétion et les montants engagés.
+
+Thèses de doctorat (1985–2020) : étude des données manquantes, de la distribution temporelle des soutenances, des directeurs de thèse et de l’évolution des langues de rédaction.
 
 
 ## Quelques résultats 
 
-### Visualisations Produites
-- Heatmaps des données manquantes (missingno)
-
-- Distribution mensuelle des soutenances
-
-- Évolution des langues de rédaction
-
-- Analyse des outliers parmi les directeurs
-
-### Analyses Réalisées
-- Détection de patterns dans les données manquantes
-
-- Identification des périodes préférées pour les soutenances
-
-- Étude des homonymes (cas Cécile Martin)
-
-- Calcul des taux de réalisation par région
+Les visualisations produites comprennent des heatmaps des données manquantes, la distribution mensuelle des soutenances, l’évolution des langues de rédaction ainsi qu’une analyse des valeurs extrêmes liées aux directeurs de thèse.
+Les analyses ont permis d’identifier des patterns temporels, de détecter des homonymes (notamment le cas « Cécile Martin ») et de comparer les taux de réalisation par région. Il y a d'avantage d'informations dans le rapport.
 
 
+## Ressources
 
-## Références
-
+- **[Rapport](./Rapport_phd.pdf)**
 - **[Énoncé du projet](./references/enonce_projet.pdf)**
+
 
 ## Auteur
 

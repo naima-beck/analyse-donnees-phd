@@ -1,5 +1,4 @@
-# Analyse de Données : thèse de doctorat en France
-Analyse de l'évolution des langues dans les thèses de doctorat en France (1985-2020). Étude de la montée de l'anglais, de la saisonnalité des soutenances et des dynamiques de l'écosystème doctoral français. 
+# Analyse de Données : Étude de la montée de l'anglais, de la saisonnalité des soutenances et des dynamiques de l'écosystème doctoral français. 
 
 Ce projet s’inscrit dans le cadre du cours d’Analyse de Données proposé conjointement par CY Tech et Sciences Po Saint-Germain-en-Laye. Il porte sur l’étude des thèses de doctorat soutenues en France, et plus particulièrement sur l’évolution de l’usage de l’anglais dans leur rédaction. L’objectif est de comprendre comment les dynamiques d’internationalisation et les injonctions institutionnelles influencent les pratiques d’écriture scientifique.
 
